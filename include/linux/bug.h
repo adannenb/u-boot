@@ -5,9 +5,22 @@
 #include <linux/build_bug.h>
 #include <linux/compiler.h>
 #include <linux/printk.h>
+#include <linux/kconfig.h>
+
+#if defined(CONFIG_TPL_BUILD) || defined(CONFIG_SPL_BUILD)
+/*
+ * In case of TPL/SPL use a short format not including __FILE__
+ * to reduce image size
+ */
+#define BUG_WARN_LOC_FMT	"%d@%s()"
+#define BUG_WARN_LOC_ARGS	__LINE__, __func__
+#else
+#define BUG_WARN_LOC_FMT	"%s:%d/%s()"
+#define BUG_WARN_LOC_ARGS	__FILE__, __LINE__, __func__
+#endif
 
 #define BUG() do { \
-	printk("BUG at %s:%d/%s()!\n", __FILE__, __LINE__, __func__); \
+	printk("BUG at "BUG_WARN_LOC_FMT"!\n", BUG_WARN_LOC_ARGS);	\
 	panic("BUG!"); \
 } while (0)
 
@@ -16,7 +29,7 @@
 #define WARN_ON(condition) ({						\
 	int __ret_warn_on = !!(condition);				\
 	if (unlikely(__ret_warn_on))					\
-		printk("WARNING at %s:%d/%s()!\n", __FILE__, __LINE__, __func__); \
+		printk("WARNING at "BUG_WARN_LOC_FMT"!\n", BUG_WARN_LOC_ARGS); \
 	unlikely(__ret_warn_on);					\
 })
 
